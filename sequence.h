@@ -45,5 +45,6 @@ ik_dna ik_dna_new (const char *, const char *);
 ik_dna ik_dna_anti (const char *, const ik_dna);
 ik_pro ik_pro_new (const char *, const char *);
 
+char* ik_translate (const char *, int);
 
 #endif

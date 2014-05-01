@@ -249,4 +249,201 @@ ik_pro ik_pro_new (const char * def, const char * seq) {
 	return pro;
 }
 
+static char GeneticCode[26][64] = { // translation tables from NCBI
+	{ // table 0: undefined
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X'
+	},
+	{ // table 1: Standard
+	'K','N','K','N','T','T','T','T','R','S','R','S','I','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','*','Y','S','S','S','S','*','C','W','C','L','F','L','F'
+	},
+	{ // table 2: Vertebrate Mitochondrial
+	'K','N','K','N','T','T','T','T','*','S','*','S','M','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','*','Y','S','S','S','S','W','C','W','C','L','F','L','F'
+	},
+	{ // table 3: Yeast Mitochondrial
+	'K','N','K','N','T','T','T','T','R','S','R','S','M','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','T','T','T','T',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','*','Y','S','S','S','S','W','C','W','C','L','F','L','F'
+	},
+	{ // table 4: Mold, Protozoan, and Coelenterate Mitochondrial & Mycoplasma/Spiroplasma
+	'K','N','K','N','T','T','T','T','R','S','R','S','I','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','*','Y','S','S','S','S','W','C','W','C','L','F','L','F'
+	},
+	{ // table 5: Invertebrate Mitochondrial
+	'K','N','K','N','T','T','T','T','S','S','S','S','M','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','*','Y','S','S','S','S','W','C','W','C','L','F','L','F'
+	},
+	{ // table 6: Ciliate, Dasycladacean and Hexamita Nuclear
+	'K','N','K','N','T','T','T','T','R','S','R','S','I','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'Q','Y','Q','Y','S','S','S','S','*','C','W','C','L','F','L','F'
+	},
+	{ // table 7: deleted
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X'
+	},
+	{ // table 8: deleted
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X'
+	},
+	{ // table 9: Echinoderm and Flatworm Mitochondrial
+	'N','N','K','N','T','T','T','T','S','S','S','S','I','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','*','Y','S','S','S','S','W','C','W','C','L','F','L','F'
+	},
+	{ // table 10: Euplotid Nuclear
+	'K','N','K','N','T','T','T','T','R','S','R','S','I','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','*','Y','S','S','S','S','C','C','W','C','L','F','L','F'
+	},
+	{ // table 11: Bacterial, Archaeal and Plant Plastid
+	'K','N','K','N','T','T','T','T','R','S','R','S','I','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','*','Y','S','S','S','S','*','C','W','C','L','F','L','F'
+	},
+	{ // table 12: Alternative Yeast Nuclear
+	'K','N','K','N','T','T','T','T','R','S','R','S','I','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','S','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','*','Y','S','S','S','S','*','C','W','C','L','F','L','F'
+	},
+	{ // table 13: Ascidian Mitochondrial
+	'K','N','K','N','T','T','T','T','G','S','G','S','M','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','*','Y','S','S','S','S','W','C','W','C','L','F','L','F'
+	},
+	{ // table 14: Alternative Flatworm Mitochondrial
+	'N','N','K','N','T','T','T','T','S','S','S','S','I','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'Y','Y','*','Y','S','S','S','S','W','C','W','C','L','F','L','F'
+	},
+	{ // table 15: Blepharisma Nuclear
+	'K','N','K','N','T','T','T','T','R','S','R','S','I','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','Q','Y','S','S','S','S','*','C','W','C','L','F','L','F'
+	},
+	{ // table 16: Chlorophycean Mitochondrial
+	'K','N','K','N','T','T','T','T','R','S','R','S','I','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','L','Y','S','S','S','S','*','C','W','C','L','F','L','F'
+	},
+	{ // table 17: undefined
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X'
+	},
+	{ // table 18: undefined
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X'
+	},
+	{ // table 19: undefined
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X'
+	},
+	{ // table 20: undefined
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X',
+	'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X'
+	},
+	{ // table 21: Trematode Mitochondrial
+	'N','N','K','N','T','T','T','T','S','S','S','S','M','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','*','Y','S','S','S','S','W','C','W','C','L','F','L','F'
+	},
+	{ // table 22: Scenedesmus obliquus mitochondrial
+	'K','N','K','N','T','T','T','T','R','S','R','S','I','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','L','Y','*','S','S','S','*','C','W','C','L','F','L','F'
+	}, 
+	{// table 23: Thraustochytrium Mitochondrial
+	'K','N','K','N','T','T','T','T','R','S','R','S','I','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','*','Y','S','S','S','S','*','C','W','C','*','F','L','F'
+	},
+	{ // table 24: Pterobranchia mitochondrial
+	'K','N','K','N','T','T','T','T','S','S','K','S','I','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','*','Y','S','S','S','S','W','C','W','C','L','F','L','F'
+	},
+	{ // table 25: Candidate Division SR1 and Gracilibacteria
+	'K','N','K','N','T','T','T','T','R','S','R','S','I','I','M','I',
+	'Q','H','Q','H','P','P','P','P','R','R','R','R','L','L','L','L',
+	'E','D','E','D','A','A','A','A','G','G','G','G','V','V','V','V',
+	'*','Y','*','Y','S','S','S','S','G','C','W','C','L','F','L','F'
+	}
+};
+
+char* ik_translate (const char *seq, int code) {
+	int i, len;
+	char *prot;
+	
+	len = strlen(seq) / 3;
+	prot = malloc(len + 1);
+	prot[len] = '\0';
+	
+	for (i = 0; i < strlen(seq); i += 3) {
+		int idx = 0;
+		switch (seq[i]) {
+			case 'A': idx +=  0; break;
+			case 'C': idx += 16; break;
+			case 'G': idx += 32; break;
+			case 'T': idx += 48; break;
+			default:  idx -= 64;
+		}
+		switch (seq[i+1]) {
+			case 'A': idx +=  0; break;
+			case 'C': idx +=  4; break;
+			case 'G': idx +=  8; break;
+			case 'T': idx += 12; break;
+			default:  idx -= 64;
+		}
+		switch (seq[i+2]) {
+			case 'A': idx +=  0; break;
+			case 'C': idx +=  1; break;
+			case 'G': idx +=  2; break;
+			case 'T': idx +=  3; break;
+			default:  idx -= 64;
+		}
+		if (idx >= 0) prot[i/3] = GeneticCode[code][idx];
+		else          prot[i/3] = 'X';
+	}
+	
+	return prot;
+}
+
 #endif

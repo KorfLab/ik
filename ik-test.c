@@ -15,6 +15,7 @@ void test_map (void);
 void test_xtree (void);
 void test_memory (void);
 void test_dna (void);
+void test_translate (void);
 void test_stuff (void);
 void test_sw (void);
 
@@ -32,6 +33,7 @@ options:\n\
   -map\n\
   -xtree\n\
   -dna\n\
+  -translate\n\
   -iterate <int> [1000]\n\
   -memory <float> [none, use gigabytes]\n\
   -stuff\n\
@@ -59,6 +61,7 @@ int main (int argc, char ** argv) {
 	ik_register_option("-map", 0);
 	ik_register_option("-xtree", 0);
 	ik_register_option("-dna", 0);
+	ik_register_option("-translate", 0);
 	ik_register_option("-all", 0);
 	ik_register_option("-memory", 1);
 	ik_register_option("-stuff", 0);
@@ -79,6 +82,7 @@ int main (int argc, char ** argv) {
 	if (ik_option("-map"))	test_map();
 	if (ik_option("-xtree")) test_xtree();
 	if (ik_option("-dna")) test_dna();
+	if (ik_option("-translate")) test_translate();
 	if (ik_option("-all")) {
 		test_ivec();
 		test_fvec();
@@ -88,6 +92,7 @@ int main (int argc, char ** argv) {
 		test_tmap();
 		test_xtree();
 		test_dna();
+		test_translate();
 	}
 	if (ik_option("-memory")) test_memory();
 
@@ -118,6 +123,7 @@ void test_dna (void) {
 	ik_dna dna;
 	ik_dna anti;
 	
+	printf("dna\n");
 	for (i = 0; i < ITERATIONS; i++) {
 		for (j = 0; j < 1000; j++) {
 			dna = ik_dna_new(">def", "AAAAACCCCCGGGGGTTTTTAAAAACCCCCGGGGGTTTTT");
@@ -126,6 +132,25 @@ void test_dna (void) {
 			ik_dna_free(anti);
 		}
 	}
+}
+
+void test_translate (void) {
+	int i, j, r;
+	char tx[241];
+	char nt[4] = {'A', 'C', 'G', 'T'};
+	char *protein;
+	
+	printf("translate\n");
+	tx[240] = '\0';
+	for (i = 0; i < 99999; i++) {
+		for (j = 0; j < 240; j++) {
+			r = 4 * (double)rand()/RAND_MAX;
+			tx[j] = nt[r];
+		}
+		protein = ik_translate(tx, 1);
+		free(protein);
+	}
+	
 }
 
 void test_memory (void) {
@@ -299,6 +324,7 @@ void test_sw (void) {
 	int r;
 	double d1, d2;
 	
+	printf("sw\n");
 	for (i = 0; i < 1000; i++) {
 		for (j = 0; j < limit; j++) {
 			r = 4 * (double)rand()/RAND_MAX;
