@@ -26,7 +26,7 @@ void ik_fasta_free (ik_fasta ff) {
 }
 
 ik_fasta ik_fasta_new (const char * def, const char * seq) {
-	ik_fasta ff = ik_malloc(sizeof(struct ik_fasta));
+	ik_fasta ff = ik_malloc(sizeof(struct _ik_fasta));
 	ff->def	   = ik_malloc(strlen(def) +1);
 	ff->seq	   = ik_malloc(strlen(seq) +1);
 	ff->length = strlen(seq);
@@ -147,7 +147,7 @@ ik_dna ik_dna_new (const char * def, const char * seq) {
 	int    i, illegal[256];
 	ik_dna dna;
 	
-	dna = ik_malloc(sizeof(struct ik_dna));
+	dna = ik_malloc(sizeof(struct _ik_dna));
 	
 	for (i = 0; i < 256; i++) illegal[i] = 0;
 	
@@ -242,7 +242,7 @@ ik_dna ik_dna_anti (const char *def, const ik_dna dna) {
 }
 
 ik_pro ik_pro_new (const char * def, const char * seq) {
-	ik_pro pro = ik_malloc(sizeof(struct ik_pro));
+	ik_pro pro = ik_malloc(sizeof(struct _ik_pro));
 	
 	/* completely unfinished */
 	

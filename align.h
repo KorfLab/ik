@@ -17,10 +17,6 @@ Copyright (C) 2003-2006 Ian Korf
 #include <stdlib.h>
 #include <string.h>
 
-#include "toolbox.h"
-
-
-
 void   set_matrix (int);
 double sw_mmg (const char*, const char*, int, int, int);
 double sw_mmg_linear (const char*, const char*, int, int, int);

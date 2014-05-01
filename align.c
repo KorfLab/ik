@@ -5,7 +5,11 @@ Copyright (C) 2003-2006 Ian Korf
 
 \******************************************************************************/
 
+#ifndef IK_ALIGN_H
+#define IK_ALIGN_H
+
 #include "align.h"
+#include "toolbox.h"
 
 static int NT[25][25] = {
 	{1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},
@@ -380,4 +384,4 @@ double sw_mat_linear (const char *s1, const char *s2, int blosum) {
 	return max_s;
 }
 
-
+#endif

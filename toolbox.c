@@ -5,6 +5,9 @@ Copyright (C) 2003-2006 Ian Korf
 
 \******************************************************************************/
 
+#ifndef IK_TOOLBOX_C
+#define IK_TOOLBOX_C
+
 #include "toolbox.h"
 
 const float MIN_SCORE = -FLT_MAX;
@@ -91,7 +94,7 @@ void ik_ivec_free (ik_ivec vec) {
 }
 
 ik_ivec ik_ivec_new(void) {
-	ik_ivec vec = ik_malloc(sizeof(struct ik_ivec));
+	ik_ivec vec = ik_malloc(sizeof(struct _ik_ivec));
 	vec->size  = 0;
 	vec->limit = 0;
 	vec->elem  = NULL;
@@ -120,7 +123,7 @@ void ik_fvec_free (ik_fvec vec) {
 }
 
 ik_fvec ik_fvec_new(void) {
-	ik_fvec vec = ik_malloc(sizeof(struct ik_fvec));
+	ik_fvec vec = ik_malloc(sizeof(struct _ik_fvec));
 	vec->size  = 0;
 	vec->limit = 0;
 	vec->elem  = NULL;
@@ -152,7 +155,7 @@ void ik_tvec_free (ik_tvec vec) {
 }
 
 ik_tvec ik_tvec_new (void) {
-	ik_tvec vec = ik_malloc(sizeof(struct ik_tvec));
+	ik_tvec vec = ik_malloc(sizeof(struct _ik_tvec));
 	vec->size  = 0;
 	vec->limit = 0;
 	vec->elem  = NULL;
@@ -182,7 +185,7 @@ void ik_vec_free (ik_vec vec) {
 }
 
 ik_vec ik_vec_new (void) {
-	ik_vec vec = ik_malloc(sizeof(struct ik_vec));
+	ik_vec vec = ik_malloc(sizeof(struct _ik_vec));
 	vec->size  = 0;
 	vec->limit = 0;
 	vec->elem  = NULL;
@@ -233,8 +236,8 @@ static void ExpandHash (ik_map hash) {
 	/* create the new hash */
 	hash->level = hash->level +1;
 	hash->slots = HashLevelToSlots(hash->level);
-	hash->key	= ik_malloc(hash->slots * sizeof(struct ik_vec));
-	hash->val	= ik_malloc(hash->slots * sizeof(struct ik_vec));
+	hash->key	= ik_malloc(hash->slots * sizeof(struct _ik_vec));
+	hash->val	= ik_malloc(hash->slots * sizeof(struct _ik_vec));
 	for (i = 0; i < hash->slots; i++) {
 		hash->key[i] = ik_vec_new();
 		hash->val[i] = ik_vec_new();
@@ -297,7 +300,7 @@ void ik_map_free (ik_map hash) {
 }
 
 ik_map ik_map_new (void) {
-	ik_map hash = ik_malloc(sizeof(struct ik_map));
+	ik_map hash = ik_malloc(sizeof(struct _ik_map));
 	hash->level = 0;
 	hash->slots = 0;
 	hash->keys	= ik_tvec_new();
@@ -395,7 +398,7 @@ void ik_imap_free (ik_imap imap) {
 }
 
 ik_imap ik_imap_new (void) {
-	ik_imap imap = ik_malloc(sizeof(struct ik_imap));
+	ik_imap imap = ik_malloc(sizeof(struct _ik_imap));
 	imap->hash = ik_map_new();
 	imap->ivec = ik_ivec_new();
 	return imap;
@@ -426,7 +429,7 @@ void ik_fmap_free (ik_fmap fmap) {
 }
 
 ik_fmap ik_fmap_new (void) {
-	ik_fmap fmap = ik_malloc(sizeof(struct ik_fmap));
+	ik_fmap fmap = ik_malloc(sizeof(struct _ik_fmap));
 	fmap->hash = ik_map_new();
 	fmap->fvec = ik_fvec_new();
 	return fmap;
@@ -458,7 +461,7 @@ void ik_tmap_free (ik_tmap t) {
 }
 
 ik_tmap ik_tmap_new (void) {
-	ik_tmap t = ik_malloc(sizeof(struct ik_tmap));
+	ik_tmap t = ik_malloc(sizeof(struct _ik_tmap));
 	t->hash = ik_map_new();
 	t->tvec = ik_tvec_new();
 	return t;
@@ -478,7 +481,7 @@ char * ik_tmap_get (ik_tmap t, const char * key) {
 #define MAX_WORD_LENGTH 65536
 
 ik_xnode ik_xnode_new (char c) {
-	ik_xnode xn = ik_malloc(sizeof(struct ik_xnode));
+	ik_xnode xn = ik_malloc(sizeof(struct _ik_xnode));
 	xn->children = ik_vec_new();
 	xn->data	 = NULL;
 	xn->c		 = c;
@@ -510,7 +513,7 @@ void ik_xtree_free (ik_xtree xt) {
 }
 
 ik_xtree ik_xtree_new (void) {
-	ik_xtree xt = ik_malloc(sizeof(struct ik_xtree));
+	ik_xtree xt = ik_malloc(sizeof(struct _ik_xtree));
 	
 	xt->head  = ik_xnode_new(0);
 	xt->alloc = ik_vec_new();
@@ -703,7 +706,7 @@ void ik_pipe_close (ik_pipe pipe) {
 ik_pipe ik_pipe_open (const char * name, const char * mode) {
 	char	 command[1024];
 	int		 length = strlen(name);
-	ik_pipe pipe = ik_malloc(sizeof(struct ik_pipe));
+	ik_pipe pipe = ik_malloc(sizeof(struct _ik_pipe));
 	
 	if		(strcmp(mode, "r") == 0)  pipe->mode = 0;
 	else if (strcmp(mode, "w") == 0)  pipe->mode = 1;
@@ -738,3 +741,5 @@ ik_pipe ik_pipe_open (const char * name, const char * mode) {
 				
 	return pipe;
 }
+
+#endif

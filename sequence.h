@@ -9,12 +9,12 @@ sequence.h
 #include <string.h>
 #include "toolbox.h"
 
-struct ik_fasta {
+struct _ik_fasta {
 	int	   length;
 	char * def;
 	char * seq;
 };
-typedef struct ik_fasta * ik_fasta;
+typedef struct _ik_fasta * ik_fasta;
 
 void	 ik_fasta_free (ik_fasta);
 ik_fasta ik_fasta_new (const char *, const char *);
@@ -22,21 +22,21 @@ ik_fasta ik_fasta_read (FILE *);
 void	 ik_fasta_write (FILE *, const ik_fasta);
 void	 ik_fasta_set_line_length (int);
 
-struct ik_dna {
+struct _ik_dna {
 	int	   length;
 	char * def;
 	char * seq;
 	char * num;
 };
-typedef struct ik_dna * ik_dna;
+typedef struct _ik_dna * ik_dna;
 
-struct ik_pro {
+struct _ik_pro {
 	int	   length;
 	char * def;
 	char * seq;
 	char * num;
 };
-typedef struct ik_pro * ik_pro;
+typedef struct _ik_pro * ik_pro;
 
 void ik_dna_free (ik_dna);
 void ik_pro_free (ik_pro);
