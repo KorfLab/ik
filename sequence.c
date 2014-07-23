@@ -409,14 +409,16 @@ static char GeneticCode[26][64] = { // translation tables from NCBI
 };
 
 char* ik_translate (const char *seq, int code) {
-	int i, len;
+	int i, cds_len, pro_len;
 	char *prot;
 	
-	len = strlen(seq) / 3;
-	prot = malloc(len + 1);
-	prot[len] = '\0';
+	cds_len = strlen(seq) - (strlen(seq) % 3);
+	pro_len = cds_len / 3;
 	
-	for (i = 0; i < strlen(seq); i += 3) {
+	prot = malloc(pro_len + 1);
+	prot[pro_len] = '\0';
+	
+	for (i = 0; i < cds_len; i += 3) {
 		int idx = 0;
 		switch (seq[i]) {
 			case 'A': idx +=  0; break;
