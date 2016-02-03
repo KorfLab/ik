@@ -18,6 +18,7 @@ void test_dna (void);
 void test_translate (void);
 void test_stuff (void);
 void test_sw (void);
+void test_align (void);
 
 static char usage[] = "\
 usage: ik-test [options]\n\
@@ -66,11 +67,13 @@ int main (int argc, char ** argv) {
 	ik_register_option("-memory", 1);
 	ik_register_option("-stuff", 0);
 	ik_register_option("-sw", 0);
+	ik_register_option("-align", 0);
 	ik_parse_options(&argc, argv);
 	
 	/* control */
 	if (ik_option("-stuff")) test_stuff();
 	if (ik_option("-sw")) test_sw();
+	if (ik_option("-align")) test_align();
 	if (ik_option("-iterate")) ITERATIONS = atoi(ik_option("-iterate"));
 	if (ik_option("-ivec")) test_ivec();
 	if (ik_option("-fvec")) test_fvec();
@@ -322,7 +325,8 @@ void test_sw (void) {
 	char s1[10000], s2[10000];
 	int limit = 1000;
 	int r;
-	double d1, d2;
+	double d1, d2, d3, d4;
+	ik_align a1, a2;
 	
 	printf("sw\n");
 	for (i = 0; i < 1000; i++) {
@@ -346,11 +350,34 @@ void test_sw (void) {
 		}
 		s1[limit] = '\0';
 		s2[limit] = '\0';
-		d1 = sw_mat_linear(s1, s2, 0);
-		d2 = sw_mat(s1, s2, 0);
-		if (d1 != d2) ik_exit(1, "fail");
+		
+		a1 = sw_mat(s1, s2, 0);
+		a2 = sw_mmg(s1, s2, 1, -1, -2);
+		d1 = a1->score;
+		d2 = a2->score;
+		d3 = sw_mat_linear(s1, s2, 0);
+		d4 = sw_mmg_linear(s1, s2, 1, -1, -2);
+				
+		if (d1 != d2 || d1 != d3 || d1 != d4 ) {
+			ik_exit(1, "sw score mismatch");
+		}
+		
+		for (j = 0; j < strlen(a1->s1_seq); j++) {
+		//	printf("%c", a1->alignment[j]);
+			if (a1->s1_seq[j] != a2->s1_seq[j]) {
+				ik_exit(1, "sw align mismatch");
+			}
+		}
+		//printf("\n");
+		
+		ik_align_free(a1);
+		ik_align_free(a2);
+		
 	}
 }
 
+void test_align (void) {
+
+}
 
 

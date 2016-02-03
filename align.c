@@ -5,8 +5,8 @@ Copyright (C) 2003-2006 Ian Korf
 
 \******************************************************************************/
 
-#ifndef IK_ALIGN_H
-#define IK_ALIGN_H
+#ifndef IK_ALIGN_C
+#define IK_ALIGN_C
 
 #include "align.h"
 #include "toolbox.h"
@@ -151,12 +151,13 @@ void set_matrix (int N) {
 	
 }
 
-double sw_mmg (const char *s1, const char *s2, int m, int n, int g) {
-	int i, j, l1, l2, max_i, max_j, min_i, min_j, pos;
+ik_align sw_mmg (const char *s1, const char *s2, int m, int n, int g) {
+	int i, j, l1, l2, max_i, max_j, min_i, min_j;
 	double d, v, h, max_s = 0;
 	double ** sm;
 	char ** tm;
-	char *a1, *a2, *a3;
+	ik_ivec a1, a2, a3;
+	ik_align align = malloc(sizeof(struct _ik_align));
 	
 	l1 = strlen(s1), l2 = strlen(s2);
 	
@@ -175,8 +176,8 @@ double sw_mmg (const char *s1, const char *s2, int m, int n, int g) {
 		for (j = 1; j <= l2; j++) {
 			if (s1[i-1] == s2[j-1]) d = sm[i-1][j-1] + m;
 			else                    d = sm[i-1][j-1] + n;
-			h = sm[i-1][j] + g;
-			v = sm[i][j-1] + g;
+			v = sm[i-1][j] + g;
+			h = sm[i][j-1] + g;
 			
 			if (d > h && d > v && d > 0) sm[i][j] = d, tm[i][j] = 'd';
 			else if (h > v && h > 0)     sm[i][j] = h, tm[i][j] = 'h';
@@ -186,34 +187,65 @@ double sw_mmg (const char *s1, const char *s2, int m, int n, int g) {
 			if (d > max_s) max_s = d, max_i = i, max_j = j;
 		}
 	}
-		
-	/* allocate alignment strings */
-	a1 = malloc((l1 + l2 + 1) * sizeof(char));
-	a2 = malloc((l1 + l2 + 1) * sizeof(char));
-	a3 = malloc((l1 + l2 + 1) * sizeof(char));
 	
 	/* traceback */
-	i = max_i, j = max_j, pos = 0;
+	a1 = ik_ivec_new();
+	a2 = ik_ivec_new();
+	a3 = ik_ivec_new();
+	i = max_i, j = max_j;
 	while (sm[i][j] > 0) {
-		a1[pos] = s1[i-1];
-		a2[pos] = s2[j-1];
 		min_i = i;
 		min_j = j;
 		
-		pos++;
-		if      (tm[i][j] == 'd') i--, j--;
-		else if (tm[i][j] == 'h') j--;
-		else if (tm[i][j] == 'v') i--;
+		if (tm[i][j] == 'd') {
+			ik_ivec_push(a1, s1[i-1]);
+			ik_ivec_push(a2, s2[j-1]);
+			if (s1[i-1] == s2[j-1]) {
+				ik_ivec_push(a3, '+');
+			} else {
+				ik_ivec_push(a3, '-');
+			}
+			i--;
+			j--;
+		} else if (tm[i][j] == 'h') {
+			ik_ivec_push(a2, s2[j-1]);
+			ik_ivec_push(a1, '-');
+			ik_ivec_push(a3, 'h');
+			j--;
+		} else if (tm[i][j] == 'v') {
+			ik_ivec_push(a1, s1[i-1]);
+			ik_ivec_push(a2, '-');
+			ik_ivec_push(a3, 'v');
+			i--;
+		}
 	}
-	a1[pos] = '\0', a2[pos] = '\0', a3[pos] = '\0';
+	
+	/* set alignment properties */
+	align->score = max_s;
+	align->s1_beg = min_i;
+	align->s1_end = max_i;
+	align->s2_beg = min_j;
+	align->s2_end = max_j;
+	
+	j = a1->size + 1;
+	align->s1_seq    = malloc(j);
+	align->s2_seq    = malloc(j);
+	align->alignment = malloc(j);
 		
-	/* reverse strings and make alignment string */
-	for (i = 0; i < strlen(a1); i++) a3[pos -i -1] = a1[i];
-	for (i = 0; i < strlen(a2); i++) a1[pos -i -1] = a2[i];
+	for (i = j-1; i >= 0; i--) align->s1_seq[i]    = a1->elem[i];
+	for (i = j-1; i >= 0; i--) align->s2_seq[i]    = a2->elem[i];
+	for (i = j-1; i >= 0; i--) align->alignment[i] = a3->elem[i];
 	
+	align->s1_seq[j-1]    = '\0';
+	align->s2_seq[j-1]    = '\0';
+	align->alignment[j-1] = '\0';
+	
+//	printf("%s\n%s\n%s\n", align->s1_seq, align->alignment, align->s2_seq);
+
 	/* clean up */
-	free(a1); free(a2); free(a3);
-	
+	ik_ivec_free(a1);
+	ik_ivec_free(a2);
+	ik_ivec_free(a3);
 	for (i = 0; i <= l1; i++) {
 		free(sm[i]);
 		free(tm[i]);
@@ -221,7 +253,118 @@ double sw_mmg (const char *s1, const char *s2, int m, int n, int g) {
 	free(sm);
 	free(tm);
 	
-	return max_s;
+	return align;
+}
+
+ik_align sw_mat (const char *s1, const char *s2, int blosum) {
+	int i, j, l1, l2, max_i, max_j, min_i, min_j;
+	double d, v, h, max_s = 0;
+	double ** sm;
+	char ** tm;
+	int a, b;
+	ik_ivec a1, a2, a3;
+	ik_align align = malloc(sizeof(struct _ik_align));
+	
+	l1 = strlen(s1), l2 = strlen(s2);
+	set_matrix(blosum);
+	
+	/* allocate matrices */
+	sm = malloc(sizeof(double*) * (l1+1));
+	tm = malloc(sizeof(double*) * (l1+1));
+	for (i = 0; i <= l1; i++)  sm[i] = malloc(sizeof(double) * (l2+1));
+	for (i = 0; i <= l1; i++)  tm[i] = malloc(sizeof(double) * (l2+1));
+		
+	/* init first column and row */
+	for (i = 0; i <= l1; i++) sm[i][0] = 0, tm[i][0] = '.';
+	for (j = 1; j <= l2; j++) sm[0][j] = 0, tm[0][j] = '.';
+	
+	/* fill matrix */
+	for (i = 1; i <= l1; i++) {
+		for (j = 1; j <= l2; j++) {
+			a = s1[i-1] - 'A';
+			b = s2[j-1] - 'A';
+			if (a >= 25) ik_exit(1, "fatal flaw a25 %d\n", a);
+			if (b >= 25) ik_exit(1, "fatal flaw b25 %d\n", a);
+			
+			d = sm[i-1][j-1] + MAT[a][b];
+			v = sm[i-1][j  ] + GAP;
+			h = sm[i  ][j-1] + GAP;
+			
+			if (d > h && d > v && d > 0) sm[i][j] = d, tm[i][j] = 'd';
+			else if (h > v && h > 0)     sm[i][j] = h, tm[i][j] = 'h';
+			else if (v > 0)              sm[i][j] = v, tm[i][j] = 'v';
+			else                         sm[i][j] = 0, tm[i][j] = '.';
+			
+			if (d > max_s) max_s = d, max_i = i, max_j = j;
+		}
+	}
+	
+	/* traceback */
+	a1 = ik_ivec_new();
+	a2 = ik_ivec_new();
+	a3 = ik_ivec_new();
+	i = max_i, j = max_j;
+	while (sm[i][j] > 0) {
+		min_i = i;
+		min_j = j;
+		
+		if (tm[i][j] == 'd') {
+			ik_ivec_push(a1, s1[i-1]);
+			ik_ivec_push(a2, s2[j-1]);
+			if (s1[i-1] == s2[j-1]) {
+				ik_ivec_push(a3, '|');
+			} else {
+				ik_ivec_push(a3, '.');
+			}
+			i--;
+			j--;
+		} else if (tm[i][j] == 'h') {
+			ik_ivec_push(a2, s2[j-1]);
+			ik_ivec_push(a1, '-');
+			ik_ivec_push(a3, 'h');
+			j--;
+		} else if (tm[i][j] == 'v') {
+			ik_ivec_push(a1, s1[i-1]);
+			ik_ivec_push(a2, '-');
+			ik_ivec_push(a3, 'v');
+			i--;
+		}
+	}
+	
+	/* set alignment properties */
+	align->score  = max_s;
+	align->s1_beg = min_i;
+	align->s1_end = max_i;
+	align->s2_beg = min_j;
+	align->s2_end = max_j;
+		
+	j = a1->size + 1;
+	align->s1_seq    = malloc(j);
+	align->s2_seq    = malloc(j);
+	align->alignment = malloc(j);
+		
+	for (i = j-1; i >= 0; i--) align->s1_seq[i]    = a1->elem[i];
+	for (i = j-1; i >= 0; i--) align->s2_seq[i]    = a2->elem[i];
+	for (i = j-1; i >= 0; i--) align->alignment[i] = a3->elem[i];
+	
+	align->s1_seq[j-1]    = '\0';
+	align->s2_seq[j-1]    = '\0';
+	align->alignment[j-1] = '\0';
+	
+//	printf("%s\n%s\n%s\n", align->s1_seq, align->alignment, align->s2_seq);
+
+	/* clean up */
+	ik_ivec_free(a1);
+	ik_ivec_free(a2);
+	ik_ivec_free(a3);
+	for (i = 0; i <= l1; i++) {
+		free(sm[i]);
+		free(tm[i]);
+	}
+	free(sm);
+	free(tm);
+	
+	return align;
 }
 
 double sw_mmg_linear (const char *s1, const char *s2, int m, int n, int g) {
@@ -261,82 +404,6 @@ double sw_mmg_linear (const char *s1, const char *s2, int m, int n, int g) {
 	/* clean up */
 	free(r1);
 	free(r2);
-	
-	return max_s;
-}
-
-double sw_mat (const char *s1, const char *s2, int blosum) {
-	int i, j, l1, l2, max_i, max_j, min_i, min_j, pos;
-	double d, v, h, max_s = 0;
-	double ** sm;
-	char ** tm;
-	char *a1, *a2, *a3;
-	int a, b;
-	
-	l1 = strlen(s1), l2 = strlen(s2);
-	set_matrix(blosum);
-	
-	/* allocate matrices */
-	sm = malloc(sizeof(double*) * (l1+1));
-	tm = malloc(sizeof(double*) * (l1+1));
-	for (i = 0; i <= l1; i++)  sm[i] = malloc(sizeof(double) * (l2+1));
-	for (i = 0; i <= l1; i++)  tm[i] = malloc(sizeof(double) * (l2+1));
-		
-	/* init first column and row */
-	for (i = 0; i <= l1; i++) sm[i][0] = 0, tm[i][0] = '.';
-	for (j = 1; j <= l2; j++) sm[0][j] = 0, tm[0][j] = '.';
-	
-	/* fill matrix */
-	for (i = 1; i <= l1; i++) {
-		for (j = 1; j <= l2; j++) {
-			a = s1[i-1] - 'A';
-			b = s2[j-1] - 'A';
-			d = sm[i-1][j-1] + MAT[a][b];
-			h = sm[i-1][j  ] + GAP;
-			v = sm[i  ][j-1] + GAP;
-			
-			if (d > h && d > v && d > 0) sm[i][j] = d, tm[i][j] = 'd';
-			else if (h > v && h > 0)     sm[i][j] = h, tm[i][j] = 'h';
-			else if (v > 0)              sm[i][j] = v, tm[i][j] = 'v';
-			else                         sm[i][j] = 0, tm[i][j] = '.';
-			
-			if (d > max_s) max_s = d, max_i = i, max_j = j;
-		}
-	}
-		
-	/* allocate alignment strings */
-	a1 = malloc((l1 + l2 + 1) * sizeof(char));
-	a2 = malloc((l1 + l2 + 1) * sizeof(char));
-	a3 = malloc((l1 + l2 + 1) * sizeof(char));
-	
-	/* traceback */
-	i = max_i, j = max_j, pos = 0;
-	while (sm[i][j] > 0) {
-		a1[pos] = s1[i-1];
-		a2[pos] = s2[j-1];
-		min_i = i;
-		min_j = j;
-		
-		pos++;
-		if      (tm[i][j] == 'd') i--, j--;
-		else if (tm[i][j] == 'h') j--;
-		else if (tm[i][j] == 'v') i--;
-	}
-	a1[pos] = '\0', a2[pos] = '\0', a3[pos] = '\0';
-		
-	/* reverse strings and make alignment string */
-	for (i = 0; i < strlen(a1); i++) a3[pos -i -1] = a1[i];
-	for (i = 0; i < strlen(a2); i++) a1[pos -i -1] = a2[i];
-	
-	/* clean up */
-	free(a1); free(a2); free(a3);
-	
-	for (i = 0; i <= l1; i++) {
-		free(sm[i]);
-		free(tm[i]);
-	}
-	free(sm);
-	free(tm);
 	
 	return max_s;
 }
@@ -382,6 +449,13 @@ double sw_mat_linear (const char *s1, const char *s2, int blosum) {
 	free(r2);
 	
 	return max_s;
+}
+
+void ik_align_free (ik_align a) {
+	free(a->s1_seq);
+	free(a->s2_seq);
+	free(a->alignment);
+	free(a);
 }
 
 #endif
